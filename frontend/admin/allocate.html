@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Allocate Seats - Admin Dashboard</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .algo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin:1rem 0}
+        .algo-card{border:2px solid #e2e8f0;border-radius:12px;padding:1rem;cursor:pointer;transition:all 0.2s;background:white}
+        .algo-card:hover{border-color:var(--primary-color);box-shadow:0 4px 12px rgba(99,102,241,.15)}
+        .algo-card.selected{border-color:var(--primary-color);background:#eef2ff}
+        .algo-icon{font-size:1.6rem;margin-bottom:0.4rem}
+        .algo-name{font-weight:700;font-size:0.9rem;color:#1e293b}
+        .algo-desc{font-size:0.76rem;color:var(--text-secondary);margin-top:0.25rem;line-height:1.4}
+        .bench-config{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1.5rem;margin:1rem 0}
+        .bench-row{display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end}
+        .bench-row .form-group{flex:1;min-width:140px}
+        .mode-tabs{display:flex;gap:0;margin-bottom:1.5rem;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden}
+        .mode-tab{flex:1;padding:0.75rem;text-align:center;cursor:pointer;background:#f8fafc;font-weight:600;font-size:0.9rem;transition:all 0.2s;border:none}
+        .mode-tab.active{background:var(--primary-color);color:white}
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <aside class="sidebar">
+        <div class="sidebar-logo"><i class="fas fa-graduation-cap"></i><h2>Exam Hall<br>Allocation</h2></div>
+        <ul class="sidebar-menu">
+            <li class="menu-item"><a href="dashboard.html"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
+            <li class="menu-item"><a href="students.html"><i class="fas fa-user-graduate"></i><span>Students</span></a></li>
+            <li class="menu-item"><a href="halls.html"><i class="fas fa-building"></i><span>Halls</span></a></li>
+            <li class="menu-item"><a href="exams.html"><i class="fas fa-calendar-alt"></i><span>Exams</span></a></li>
+            <li class="menu-item"><a href="allocate.html" class="active"><i class="fas fa-sitemap"></i><span>Allocate Seats</span></a></li>
+            <li class="menu-item"><a href="seatmap.html"><i class="fas fa-map"></i><span>Seat Map</span></a></li>
+        </ul>
+    </aside>
+    <main class="main-content">
+        <div class="top-bar">
+            <h1 class="page-title">Seat Allocation</h1>
+            <div class="user-menu">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">A</div>
+                    <div><div style="font-weight:600" id="userName">Admin</div><div style="font-size:.85rem;color:var(--text-secondary)">Administrator</div></div>
+                </div>
+                <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </div>
+
+        <div class="content-card">
+            <div class="mode-tabs">
+                <button class="mode-tab active" id="autoTab" onclick="switchMode('auto')"><i class="fas fa-magic"></i> Auto Allocation</button>
+                <button class="mode-tab" id="manualTab" onclick="switchMode('manual')"><i class="fas fa-hand-pointer"></i> Manual Allocation</button>
+            </div>
+
+            <!-- AUTO MODE -->
+            <div id="autoMode">
+                <div class="card-header"><h2 class="card-title"><i class="fas fa-cogs"></i> Configure Allocation</h2></div>
+                <form id="allocationForm" onsubmit="runAllocation(event)">
+                    <div class="form-group">
+                        <label>Select Exam *</label>
+                        <select id="exam_id" class="form-control" required onchange="loadExamInfo()">
+                            <option value="">-- Select an Exam --</option>
+                        </select>
+                    </div>
+                    <div id="examInfo" style="display:none;padding:1.5rem;background:var(--light);border-radius:12px;margin-bottom:1.5rem">
+                        <h3 style="margin-bottom:1rem;color:var(--primary-color)">Exam Information</h3>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem" id="examDetails"></div>
+                    </div>
+
+                    <!-- Algorithm selection -->
+                    <div style="margin-bottom:1.5rem">
+                        <h3 style="margin-bottom:.75rem;color:var(--primary-color)"><i class="fas fa-robot"></i> Select Algorithm</h3>
+                        <input type="hidden" id="allocation_method" value="standard">
+                        <div class="algo-grid">
+                            <div class="algo-card selected" onclick="selectAlgo('standard',this)">
+                                <div class="algo-icon">📋</div><div class="algo-name">Sequential</div>
+                                <div class="algo-desc">Row by row, left to right. Default method.</div>
+                            </div>
+                            <div class="algo-card" onclick="selectAlgo('zigzag',this)">
+                                <div class="algo-icon">↔️</div><div class="algo-name">Zig-Zag</div>
+                                <div class="algo-desc">Row 1 left→right, Row 2 right→left, alternating.</div>
+                            </div>
+                            <div class="algo-card" onclick="selectAlgo('alternate_bench',this)">
+                                <div class="algo-icon">⏭️</div><div class="algo-name">Alternate Bench</div>
+                                <div class="algo-desc">Skip every other bench for physical distance.</div>
+                            </div>
+                            <div class="algo-card" onclick="selectAlgo('branch_segregated',this)">
+                                <div class="algo-icon">🏷️</div><div class="algo-name">Branch Grouping</div>
+                                <div class="algo-desc">All CSE together, all ECE together, etc.</div>
+                            </div>
+                            <div class="algo-card" onclick="selectAlgo('year_segregated',this)">
+                                <div class="algo-icon">🎓</div><div class="algo-name">Year Separation</div>
+                                <div class="algo-desc">Year 1 first, Year 2 next section, etc.</div>
+                            </div>
+                            <div class="algo-card" onclick="selectAlgo('random',this)">
+                                <div class="algo-icon">🎲</div><div class="algo-name">Fully Random</div>
+                                <div class="algo-desc">Fisher-Yates shuffle, maximum mixing.</div>
+                            </div>
+                            <div class="algo-card" onclick="selectAlgo('left_right',this)">
+                                <div class="algo-icon">↙️↗️</div><div class="algo-name">Left-Right Split</div>
+                                <div class="algo-desc">Lower year left, higher year right. Bench≥2 = Auditorium Mode.</div>
+                            </div>
+                            <div class="algo-card" onclick="selectAlgo('optimized',this)">
+                                <div class="algo-icon">⚡</div><div class="algo-name">Optimized Fill</div>
+                                <div class="algo-desc">Largest halls first for best capacity use.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bench config -->
+                    <div class="bench-config">
+                        <h3 style="margin-bottom:1rem;color:var(--primary-color)"><i class="fas fa-chair"></i> Bench Configuration</h3>
+                        <div class="bench-row">
+                            <div class="form-group">
+                                <label>Students per Bench</label>
+                                <select id="bench_capacity" class="form-control">
+                                    <option value="1">1 student / bench</option>
+                                    <option value="2">2 students / bench</option>
+                                    <option value="3">3 students / bench</option>
+                                    <option value="4">4 students / bench</option>
+                                </select>
+                                <small style="color:var(--text-secondary)">Set to 2 with Left-Right Split for Auditorium Mode</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Gap Between Benches</label>
+                                <select id="gap_between_students" class="form-control">
+                                    <option value="0">No gap</option>
+                                    <option value="1" selected>1 bench gap</option>
+                                    <option value="2">2 bench gap</option>
+                                    <option value="3">3 bench gap</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Allocation rules -->
+                    <div style="padding:1.5rem;background:var(--light);border-radius:12px;margin-bottom:1.5rem">
+                        <h3 style="margin-bottom:1rem;color:var(--primary-color)"><i class="fas fa-sliders-h"></i> Allocation Rules</h3>
+                        <div class="form-group">
+                            <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
+                                <input type="checkbox" id="mix_branches" style="width:20px;height:20px">
+                                <span>Mix students from different branches</span>
+                            </label>
+                            <small style="color:var(--text-secondary);margin-left:1.75rem;display:block">When enabled, students from different branches will be mixed in halls</small>
+                        </div>
+                        <div class="form-group">
+                            <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
+                                <input type="checkbox" id="mix_years" style="width:20px;height:20px">
+                                <span>Mix students from different years</span>
+                            </label>
+                            <small style="color:var(--text-secondary);margin-left:1.75rem;display:block">When enabled, students from different years will be mixed in halls</small>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width:100%;padding:1.25rem;font-size:1.1rem">
+                        <i class="fas fa-magic"></i> Run Allocation Algorithm
+                    </button>
+                </form>
+            </div>
+
+            <!-- MANUAL MODE -->
+            <div id="manualMode" style="display:none">
+                <div class="card-header"><h2 class="card-title"><i class="fas fa-hand-pointer"></i> Manual Seat Assignment</h2></div>
+                <div class="form-group">
+                    <label>Select Exam</label>
+                    <select id="manual_exam_id" class="form-control" onchange="loadManualData()">
+                        <option value="">-- Select an Exam --</option>
+                    </select>
+                </div>
+                <div id="manualInterface" style="display:none">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+                        <div class="form-group">
+                            <label>Student (unallocated)</label>
+                            <select id="manual_student" class="form-control"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Hall</label>
+                            <select id="manual_hall" class="form-control"></select>
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                        <div class="form-group">
+                            <label>Row Number</label>
+                            <input type="number" id="manual_row" class="form-control" min="1" value="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Column Number</label>
+                            <input type="number" id="manual_col" class="form-control" min="1" value="1">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" style="width:100%;margin-top:1rem" onclick="doManualAllocate()">
+                        <i class="fas fa-check"></i> Assign This Seat
+                    </button>
+                    <div style="margin-top:1.5rem">
+                        <h4 style="margin-bottom:1rem;color:var(--primary-color)">Swap / Remove Seats</h4>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                            <div class="form-group">
+                                <label>Student 1 (swap)</label>
+                                <select id="swap_student1" class="form-control"></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Student 2 (swap with)</label>
+                                <select id="swap_student2" class="form-control"></select>
+                            </div>
+                        </div>
+                        <button class="btn btn-info" onclick="doSwap()"><i class="fas fa-exchange-alt"></i> Swap Seats</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="allocationResults" style="display:none">
+            <div class="content-card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-check-circle"></i> Allocation Results</h2>
+                    <div style="display:flex;gap:1rem">
+                        <button class="btn btn-info" onclick="window.location.href='seatmap.html'"><i class="fas fa-map"></i> Visual Seat Map</button>
+                        <button class="btn btn-success" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+                    </div>
+                </div>
+                <div id="resultsContent"></div>
+            </div>
+        </div>
+
+        <!-- Existing -->
+        <div class="content-card">
+            <div class="card-header"><h2 class="card-title"><i class="fas fa-list"></i> Existing Allocations</h2></div>
+            <div id="existingAllocations"><div class="loading"><div class="spinner"></div><p>Loading...</p></div></div>
+        </div>
+    </main>
+</div>
+
+<script src="../js/config.js"></script>
+<script>
+checkAuth('admin');
+const user = getUser();
+if(user){document.getElementById('userName').textContent=user.username;document.getElementById('userAvatar').textContent=user.username.charAt(0).toUpperCase();}
+
+let allExams=[], eligibleStudents=[], availableHalls=[];
+
+function switchMode(mode){
+    document.getElementById('autoMode').style.display=mode==='auto'?'block':'none';
+    document.getElementById('manualMode').style.display=mode==='manual'?'block':'none';
+    document.getElementById('autoTab').classList.toggle('active',mode==='auto');
+    document.getElementById('manualTab').classList.toggle('active',mode==='manual');
+    if(mode==='manual'){
+        const opts='<option value="">-- Select --</option>'+allExams.map(e=>`<option value="${e.exam_id}">${e.exam_name} - ${e.subject}</option>`).join('');
+        document.getElementById('manual_exam_id').innerHTML=opts;
+    }
+}
+
+function selectAlgo(method,card){
+    document.querySelectorAll('.algo-card').forEach(c=>c.classList.remove('selected'));
+    card.classList.add('selected');
+    document.getElementById('allocation_method').value=method;
+    if(method==='left_right'){document.getElementById('bench_capacity').value='2';showAlert('Tip: Left-Right Split with 2 students/bench activates Auditorium Mode','success');}
+}
+
+async function loadExams(){
+    try{
+        allExams=await apiRequest(API.EXAMS);
+        const opts='<option value="">-- Select an Exam --</option>'+allExams.map(e=>`<option value="${e.exam_id}">${e.exam_name} - ${e.subject} (${formatDate(e.exam_date)})</option>`).join('');
+        document.getElementById('exam_id').innerHTML=opts;
+    }catch(e){console.error(e);}
+}
+
+async function loadExamInfo(){
+    const examId=document.getElementById('exam_id').value;
+    if(!examId){document.getElementById('examInfo').style.display='none';return;}
+    const exam=allExams.find(e=>e.exam_id==examId);
+    try{
+        eligibleStudents=await apiRequest(API.ELIGIBLE_STUDENTS(examId));
+        availableHalls=(await apiRequest(API.HALLS)).filter(h=>h.is_available);
+        const totalCap=availableHalls.reduce((s,h)=>s+h.capacity,0);
+        document.getElementById('examDetails').innerHTML=`
+            <div><div style="font-size:.85rem;color:var(--text-secondary)">Exam</div><div style="font-weight:600">${exam.exam_name}</div></div>
+            <div><div style="font-size:.85rem;color:var(--text-secondary)">Subject</div><div style="font-weight:600">${exam.subject}</div></div>
+            <div><div style="font-size:.85rem;color:var(--text-secondary)">Date/Time</div><div style="font-weight:600">${formatDate(exam.exam_date)}, ${formatTime(exam.start_time)}</div></div>
+            <div><div style="font-size:.85rem;color:var(--text-secondary)">Branch/Year</div><div style="font-weight:600">${exam.branch||'All'} / ${exam.year||'All'}</div></div>
+            <div style="padding:1rem;background:white;border-radius:10px;text-align:center"><div style="font-size:.85rem;color:var(--text-secondary)">Eligible Students</div><div style="font-size:1.5rem;font-weight:700;color:var(--primary-color)">${eligibleStudents.length}</div></div>
+            <div style="padding:1rem;background:white;border-radius:10px;text-align:center"><div style="font-size:.85rem;color:var(--text-secondary)">Total Capacity</div><div style="font-size:1.5rem;font-weight:700;color:${totalCap>=eligibleStudents.length?'var(--success-color)':'var(--danger-color)'}">${totalCap}</div></div>`;
+        document.getElementById('examInfo').style.display='block';
+        if(totalCap<eligibleStudents.length)showAlert(`Warning: Not enough capacity! Students: ${eligibleStudents.length}, Capacity: ${totalCap}`,'error');
+    }catch(e){showAlert('Failed to load exam info','error');}
+}
+
+async function runAllocation(event){
+    event.preventDefault();
+    const examId=document.getElementById('exam_id').value;
+    if(!examId){showAlert('Please select an exam','error');return;}
+    if(!confirm('Run seat allocation for all eligible students? This will replace any existing allocation.'))return;
+    const rules={
+        allocation_method:document.getElementById('allocation_method').value,
+        bench_capacity:parseInt(document.getElementById('bench_capacity').value),
+        mix_branches:document.getElementById('mix_branches').checked,
+        mix_years:document.getElementById('mix_years').checked,
+        gap_between_students:parseInt(document.getElementById('gap_between_students').value)
+    };
+    const btn=event.target.querySelector('button[type="submit"]');
+    const orig=btn.innerHTML;
+    btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Allocating...';
+    btn.disabled=true;
+    try{
+        const result=await apiRequest(API.ALLOCATE_SEATS,{method:'POST',body:JSON.stringify({exam_id:examId,allocation_rules:rules})});
+        showAlert(result.message||`Allocation completed! ${result.allocated_count||''} students assigned.`,'success');
+        await showAllocationResults(examId);
+        loadExistingAllocations();
+        document.getElementById('allocationForm').reset();
+        document.getElementById('examInfo').style.display='none';
+        document.querySelectorAll('.algo-card').forEach(c=>c.classList.remove('selected'));
+        document.querySelector('.algo-card').classList.add('selected');
+        document.getElementById('allocation_method').value='standard';
+        loadExams();
+    }catch(e){showAlert(e.message||'Allocation failed','error');}
+    finally{btn.innerHTML=orig;btn.disabled=false;}
+}
+
+async function showAllocationResults(examId){
+    try{
+        const allocations=await apiRequest(API.EXAM_ALLOCATIONS(examId));
+        const hallGroups={};
+        allocations.forEach(a=>{if(!hallGroups[a.hall_name])hallGroups[a.hall_name]=[];hallGroups[a.hall_name].push(a);});
+        let html=`<div style="padding:1.5rem;background:var(--light);border-radius:12px;margin-bottom:1rem">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem">
+                <div style="text-align:center"><div style="font-size:.85rem;color:var(--text-secondary);margin-bottom:.5rem">Total Allocated</div><div style="font-size:2rem;font-weight:700;color:var(--primary-color)">${allocations.length}</div></div>
+                <div style="text-align:center"><div style="font-size:.85rem;color:var(--text-secondary);margin-bottom:.5rem">Halls Used</div><div style="font-size:2rem;font-weight:700;color:var(--success-color)">${Object.keys(hallGroups).length}</div></div>
+            </div></div><h3 style="margin:1.5rem 0 1rem">Allocation by Hall</h3>`;
+        for(const[hallName,hallAllocs]of Object.entries(hallGroups)){
+            const hallId=hallAllocs[0]?.hall_id;
+            html+=`<div style="padding:1rem;background:var(--light);border-radius:10px;margin-bottom:.5rem;display:flex;justify-content:space-between;align-items:center">
+                <div><strong style="font-size:1.1rem">${hallName}</strong><span style="color:var(--text-secondary);margin-left:1rem">${hallAllocs.length} students</span></div>
+                <div style="display:flex;gap:.5rem">
+                    <button class="btn-sm btn-info" onclick="window.location.href='seatmap.html?exam_id=${examId}&hall_id=${hallId}'"><i class="fas fa-map"></i> Seat Map</button>
+                    <button class="btn-sm btn-success" onclick="window.open('seatmap.html?exam_id=${examId}&hall_id=${hallId}&print=1')"><i class="fas fa-print"></i> Print</button>
+                </div></div>`;
+        }
+        document.getElementById('resultsContent').innerHTML=html;
+        document.getElementById('allocationResults').style.display='block';
+        document.getElementById('allocationResults').scrollIntoView({behavior:'smooth'});
+    }catch(e){console.error(e);}
+}
+
+async function loadExistingAllocations(){
+    try{
+        const allocations=await apiRequest(API.ALLOCATIONS);
+        if(!allocations.length){document.getElementById('existingAllocations').innerHTML='<div style="text-align:center;padding:3rem;color:var(--text-secondary)"><i class="fas fa-inbox" style="font-size:4rem;opacity:.3;margin-bottom:1rem"></i><p>No allocations yet</p></div>';return;}
+        const examGroups={};
+        allocations.forEach(a=>{const k=`${a.exam_name}-${a.subject}`;if(!examGroups[k])examGroups[k]={exam_id:a.exam_id,exam_name:a.exam_name,subject:a.subject,exam_date:a.exam_date,count:0};examGroups[k].count++;});
+        let html='<div style="display:grid;gap:1rem">';
+        for(const g of Object.values(examGroups)){
+            html+=`<div style="padding:1.5rem;background:var(--light);border-radius:12px;display:flex;justify-content:space-between;align-items:center">
+                <div><h3 style="margin-bottom:.5rem">${g.exam_name}</h3><p style="color:var(--text-secondary)">${g.subject} • ${formatDate(g.exam_date)} • ${g.count} students</p></div>
+                <div style="display:flex;gap:.5rem">
+                    <button class="btn-sm btn-info" onclick="window.location.href='seatmap.html?exam_id=${g.exam_id}'"><i class="fas fa-map"></i> Seat Map</button>
+                    <button class="btn-sm btn-danger" onclick="deleteAllocations(${g.exam_id})"><i class="fas fa-trash"></i> Delete</button>
+                </div></div>`;
+        }
+        html+='</div>';
+        document.getElementById('existingAllocations').innerHTML=html;
+    }catch(e){console.error(e);}
+}
+
+async function loadManualData(){
+    const examId=document.getElementById('manual_exam_id').value;
+    if(!examId){document.getElementById('manualInterface').style.display='none';return;}
+    try{
+        const[students,halls,allocs]=await Promise.all([apiRequest(API.STUDENTS),apiRequest(API.HALLS),apiRequest(API.EXAM_ALLOCATIONS(examId))]);
+        const allocatedIds=new Set(allocs.map(a=>a.student_id));
+        const unallocated=students.filter(s=>!allocatedIds.has(s.student_id));
+        document.getElementById('manual_student').innerHTML=unallocated.length?unallocated.map(s=>`<option value="${s.student_id}">${s.roll_number} - ${s.name}</option>`).join(''):'<option value="">No unallocated students</option>';
+        const hallOpts=halls.filter(h=>h.is_available).map(h=>`<option value="${h.hall_id}">${h.hall_name} (${h.total_rows}×${h.total_columns})</option>`).join('');
+        document.getElementById('manual_hall').innerHTML=hallOpts;
+        const allocatedOpts=allocs.map(a=>`<option value="${a.student_id}">${a.roll_number} - ${a.student_name}</option>`).join('');
+        document.getElementById('swap_student1').innerHTML=allocatedOpts;
+        document.getElementById('swap_student2').innerHTML=allocatedOpts;
+        document.getElementById('manualInterface').style.display='block';
+    }catch(e){showAlert('Failed to load','error');}
+}
+
+async function doManualAllocate(){
+    const examId=document.getElementById('manual_exam_id').value;
+    const studentId=document.getElementById('manual_student').value;
+    const hallId=document.getElementById('manual_hall').value;
+    const row=parseInt(document.getElementById('manual_row').value);
+    const col=parseInt(document.getElementById('manual_col').value);
+    if(!examId||!studentId||!hallId){showAlert('Fill all fields','error');return;}
+    try{
+        await apiRequest(`${API.ALLOCATIONS}/manual`,{method:'POST',body:JSON.stringify({exam_id:examId,student_id:studentId,hall_id:hallId,row_number:row,column_number:col,bench_position:1})});
+        showAlert('Student manually assigned!','success');
+        loadManualData();
+        loadExistingAllocations();
+    }catch(e){showAlert(e.message||'Failed','error');}
+}
+
+async function doSwap(){
+    const examId=document.getElementById('manual_exam_id').value;
+    const s1=document.getElementById('swap_student1').value;
+    const s2=document.getElementById('swap_student2').value;
+    if(!examId||!s1||!s2||s1===s2){showAlert('Select 2 different students','error');return;}
+    try{
+        await apiRequest(`${API.ALLOCATIONS}/swap`,{method:'POST',body:JSON.stringify({exam_id:examId,student_id_1:s1,student_id_2:s2})});
+        showAlert('Seats swapped successfully!','success');
+        loadManualData();
+    }catch(e){showAlert(e.message||'Swap failed','error');}
+}
+
+async function deleteAllocations(examId){
+    if(!confirm('Delete all allocations for this exam?'))return;
+    try{
+        await apiRequest(API.EXAM_ALLOCATIONS(examId),{method:'DELETE'});
+        showAlert('Allocations deleted');
+        loadExistingAllocations();
+        document.getElementById('allocationResults').style.display='none';
+    }catch(e){showAlert('Failed to delete','error');}
+}
+
+loadExams();
+loadExistingAllocations();
+</script>
+</body>
+</html>

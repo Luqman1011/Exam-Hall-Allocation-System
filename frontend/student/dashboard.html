@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - Exam Hall Allocation</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Main Content (No Sidebar for Students) -->
+        <main style="margin-left: 0; padding: 2rem; max-width: 1200px; margin: 0 auto;">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div>
+                    <h1 class="page-title">Student Portal</h1>
+                    <p style="color: var(--text-secondary); margin-top: 0.5rem;">View your exam schedule and seat allocations</p>
+                </div>
+                <div class="user-menu">
+                    <div class="user-info">
+                        <div class="user-avatar" id="userAvatar">S</div>
+                        <div>
+                            <div style="font-weight: 600;" id="studentName">Student</div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);" id="studentRoll">Roll No</div>
+                        </div>
+                    </div>
+                    <button class="btn-logout" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+
+            <!-- Student Profile Card -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-user"></i> My Profile</h2>
+                </div>
+                <div id="profileInfo" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading profile...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming Exams -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-calendar-alt"></i> Upcoming Exams</h2>
+                </div>
+                <div id="upcomingExams">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading exams...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seat Allocations -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-chair"></i> My Seat Allocations</h2>
+                </div>
+                <div id="allocations">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading allocations...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script>
+        // Check authentication
+        checkAuth('student');
+
+        // Load user info
+        const user = getUser();
+        if (user) {
+            document.getElementById('studentName').textContent = user.name;
+            document.getElementById('studentRoll').textContent = user.roll_number;
+            document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+        }
+
+        // Load student profile
+        async function loadProfile() {
+            try {
+                const profile = await apiRequest(API.STUDENT_PROFILE);
+                
+                const profileHtml = `
+                    <div style="padding: 1rem; background: var(--light); border-radius: 12px;">
+                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Name</div>
+                        <div style="font-weight: 600; font-size: 1.1rem;">${profile.name}</div>
+                    </div>
+                    <div style="padding: 1rem; background: var(--light); border-radius: 12px;">
+                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Roll Number</div>
+                        <div style="font-weight: 600; font-size: 1.1rem;">${profile.roll_number}</div>
+                    </div>
+                    <div style="padding: 1rem; background: var(--light); border-radius: 12px;">
+                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Branch</div>
+                        <div style="font-weight: 600; font-size: 1.1rem;">${profile.branch}</div>
+                    </div>
+                    <div style="padding: 1rem; background: var(--light); border-radius: 12px;">
+                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Year & Semester</div>
+                        <div style="font-weight: 600; font-size: 1.1rem;">Year ${profile.year}, Sem ${profile.semester}</div>
+                    </div>
+                `;
+                
+                document.getElementById('profileInfo').innerHTML = profileHtml;
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                document.getElementById('profileInfo').innerHTML = `
+                    <div class="alert alert-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Failed to load profile</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Load upcoming exams
+        async function loadExams() {
+            try {
+                const exams = await apiRequest(API.STUDENT_EXAMS);
+                
+                if (exams.length === 0) {
+                    document.getElementById('upcomingExams').innerHTML = `
+                        <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                            <i class="fas fa-calendar-times" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                            <p>No upcoming exams scheduled</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const examsHtml = exams.map(exam => `
+                    <div style="padding: 1.5rem; background: var(--light); border-radius: 12px; border-left: 4px solid var(--primary-color); margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                            <div>
+                                <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem;">${exam.exam_name}</h3>
+                                <p style="color: var(--text-secondary);">${exam.subject}</p>
+                            </div>
+                            <span style="padding: 0.5rem 1rem; background: var(--primary-color); color: white; border-radius: 8px; font-size: 0.85rem; font-weight: 600;">
+                                ${exam.status.toUpperCase()}
+                            </span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                            <div>
+                                <div style="font-size: 0.85rem; color: var(--text-secondary);">Date</div>
+                                <div style="font-weight: 600;"><i class="fas fa-calendar"></i> ${formatDate(exam.exam_date)}</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.85rem; color: var(--text-secondary);">Time</div>
+                                <div style="font-weight: 600;"><i class="fas fa-clock"></i> ${formatTime(exam.start_time)} - ${formatTime(exam.end_time)}</div>
+                            </div>
+                        </div>
+                        ${exam.status === 'allocated' ? `
+                            <button onclick="viewAllocation(${exam.exam_id})" class="btn btn-primary" style="margin-top: 1rem; width: 100%;">
+                                <i class="fas fa-chair"></i> View Seat Allocation
+                            </button>
+                        ` : ''}
+                    </div>
+                `).join('');
+                
+                document.getElementById('upcomingExams').innerHTML = examsHtml;
+            } catch (error) {
+                console.error('Error loading exams:', error);
+                document.getElementById('upcomingExams').innerHTML = `
+                    <div class="alert alert-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Failed to load exams</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Load allocations
+        async function loadAllocations() {
+            try {
+                const allocations = await apiRequest(API.STUDENT_ALLOCATIONS);
+                
+                if (allocations.length === 0) {
+                    document.getElementById('allocations').innerHTML = `
+                        <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                            <i class="fas fa-chair" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                            <p>No seat allocations yet</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const allocationsHtml = allocations.map(alloc => `
+                    <div style="padding: 1.5rem; background: var(--light); border-radius: 12px; margin-bottom: 1rem;">
+                        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 2rem; align-items: center;">
+                            <div>
+                                <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">${alloc.exam_name}</h3>
+                                <p style="color: var(--text-secondary); font-size: 0.9rem;">${alloc.subject}</p>
+                                <div style="margin-top: 0.5rem;">
+                                    <i class="fas fa-calendar"></i> ${formatDate(alloc.exam_date)} 
+                                    <span style="margin-left: 1rem;"><i class="fas fa-clock"></i> ${formatTime(alloc.start_time)}</span>
+                                </div>
+                            </div>
+                            <div style="text-align: center; padding: 1rem; background: white; border-radius: 12px;">
+                                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Hall</div>
+                                <div style="font-size: 1.25rem; font-weight: 700; color: var(--primary-color);">${alloc.hall_name}</div>
+                                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">${alloc.building}, Floor ${alloc.floor}</div>
+                            </div>
+                            <div style="text-align: center; padding: 1rem; background: white; border-radius: 12px;">
+                                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Seat Number</div>
+                                <div style="font-size: 2rem; font-weight: 700; color: var(--primary-color);">${alloc.seat_number}</div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                document.getElementById('allocations').innerHTML = allocationsHtml;
+            } catch (error) {
+                console.error('Error loading allocations:', error);
+                document.getElementById('allocations').innerHTML = `
+                    <div class="alert alert-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Failed to load allocations</span>
+                    </div>
+                `;
+            }
+        }
+
+        // View specific allocation
+        async function viewAllocation(examId) {
+            try {
+                const alloc = await apiRequest(API.STUDENT_ALLOCATION(examId));
+                
+                alert(`Your Seat Allocation:\n\nExam: ${alloc.exam_name}\nHall: ${alloc.hall_name}\nSeat: ${alloc.seat_number}\nDate: ${formatDate(alloc.exam_date)}\nTime: ${formatTime(alloc.start_time)}`);
+            } catch (error) {
+                console.error('Error loading allocation:', error);
+                alert('No allocation found for this exam yet.');
+            }
+        }
+
+        // Load all data on page load
+        loadProfile();
+        loadExams();
+        loadAllocations();
+    </script>
+</body>
+</html>

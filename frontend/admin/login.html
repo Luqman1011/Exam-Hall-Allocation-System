@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Exam Hall Allocation</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="login-container">
+        <!-- Animated Background -->
+        <div class="animated-bg">
+            <div class="circle circle-1"></div>
+            <div class="circle circle-2"></div>
+            <div class="circle circle-3"></div>
+        </div>
+
+        <div class="login-box">
+            <div class="login-header">
+                <div class="login-icon">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <h1>Admin Login</h1>
+                <p>Welcome back! Please login to your account</p>
+            </div>
+
+            <form class="login-form" id="adminLoginForm">
+                <div id="alertContainer"></div>
+
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <div class="input-group">
+                        <i class="fas fa-user"></i>
+                        <input 
+                            type="text" 
+                            id="username" 
+                            name="username" 
+                            class="form-control" 
+                            placeholder="Enter your username"
+                            required
+                            autocomplete="username"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            class="form-control" 
+                            placeholder="Enter your password"
+                            required
+                            autocomplete="current-password"
+                        >
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-login">
+                    <span id="loginText">Login</span>
+                    <span id="loginSpinner" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i> Logging in...
+                    </span>
+                </button>
+            </form>
+
+            <div class="login-footer">
+                <p>Not an admin? <a href="../student/login.html">Student Login</a></p>
+                <p><a href="../index.html">← Back to Home</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script>
+        // Check if already logged in
+        if (getAuthToken() && getUser()?.role === 'admin') {
+            window.location.href = 'dashboard.html';
+        }
+
+        // Handle form submission
+        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const loginText = document.getElementById('loginText');
+            const loginSpinner = document.getElementById('loginSpinner');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            
+            // Clear previous alerts
+            document.getElementById('alertContainer').innerHTML = '';
+            
+            // Show loading
+            loginText.style.display = 'none';
+            loginSpinner.style.display = 'inline';
+            submitBtn.disabled = true;
+            
+            try {
+                const data = await apiRequest(API.ADMIN_LOGIN, {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password }),
+                });
+                
+                if (data.success && data.token) {
+                    // Save token and user info
+                    setAuthToken(data.token);
+                    setUser(data.user);
+                    
+                    // Show success message
+                    showSuccessAlert('Login successful! Redirecting...');
+                    
+                    // Redirect to dashboard
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
+                } else {
+                    throw new Error('Invalid response from server');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showErrorAlert(error.message || 'Login failed. Please check your credentials.');
+                
+                // Reset form
+                loginText.style.display = 'inline';
+                loginSpinner.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+
+        function showSuccessAlert(message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success';
+            alertDiv.innerHTML = `
+                <i class="fas fa-check-circle"></i>
+                <span>${message}</span>
+            `;
+            document.getElementById('alertContainer').appendChild(alertDiv);
+        }
+
+        function showErrorAlert(message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-error';
+            alertDiv.innerHTML = `
+                <i class="fas fa-exclamation-circle"></i>
+                <span>${message}</span>
+            `;
+            document.getElementById('alertContainer').appendChild(alertDiv);
+        }
+    </script>
+</body>
+</html>

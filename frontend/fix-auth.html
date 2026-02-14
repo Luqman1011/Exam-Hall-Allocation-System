@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Authentication - Clear Tokens</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 3rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 500px;
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        .btn {
+            padding: 12px 30px;
+            margin: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #059669;
+        }
+        .status {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+            display: none;
+        }
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            display: block;
+        }
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+            display: block;
+        }
+        .token-info {
+            text-align: left;
+            background: #f3f4f6;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Authentication Fix Tool</h1>
+        <p style="color: #666; margin-bottom: 2rem;">Use this tool to fix "Invalid token" errors</p>
+        
+        <div id="status" class="status"></div>
+        
+        <div class="token-info">
+            <strong>Current Status:</strong><br>
+            <div id="tokenStatus">Checking...</div>
+        </div>
+        
+        <button class="btn btn-primary" onclick="clearAllTokens()">
+            🗑️ Clear All Tokens & Logout
+        </button>
+        
+        <button class="btn btn-success" onclick="goToAdminLogin()">
+            👨‍💼 Go to Admin Login
+        </button>
+        
+        <div style="margin-top: 2rem; padding: 1rem; background: #fef3c7; border-radius: 8px; text-align: left;">
+            <strong>⚠️ Instructions:</strong><br>
+            1. Click "Clear All Tokens"<br>
+            2. Go back to login page<br>
+            3. Login again with your credentials<br>
+            4. The error should be fixed!
+        </div>
+    </div>
+
+    <script>
+        // Check current token status
+        function checkTokenStatus() {
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+            const statusDiv = document.getElementById('tokenStatus');
+            
+            let html = '';
+            if (token) {
+                html += `✅ Token exists (length: ${token.length})<br>`;
+                html += `Token: ${token.substring(0, 50)}...<br>`;
+            } else {
+                html += `❌ No token found<br>`;
+            }
+            
+            if (user) {
+                html += `✅ User data exists<br>`;
+                try {
+                    const userData = JSON.parse(user);
+                    html += `User: ${JSON.stringify(userData, null, 2)}<br>`;
+                } catch (e) {
+                    html += `❌ User data corrupted<br>`;
+                }
+            } else {
+                html += `❌ No user data found<br>`;
+            }
+            
+            statusDiv.innerHTML = html;
+        }
+        
+        // Clear all tokens
+        function clearAllTokens() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            sessionStorage.clear();
+            
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = 'status success';
+            statusDiv.innerHTML = '✅ All tokens and user data cleared successfully!';
+            
+            checkTokenStatus();
+            
+            setTimeout(() => {
+                alert('Tokens cleared! You will be redirected to login page.');
+                window.location.href = '/admin/login.html';
+            }, 2000);
+        }
+        
+        // Go to admin login
+        function goToAdminLogin() {
+            window.location.href = '/admin/login.html';
+        }
+        
+        // Check status on load
+        checkTokenStatus();
+    </script>
+</body>
+</html>

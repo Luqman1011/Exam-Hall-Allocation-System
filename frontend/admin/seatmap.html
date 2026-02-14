@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Seat Map</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ── Seat Map Layout ──────────────────────────────────────── */
+        .seatmap-wrapper{padding:1rem;overflow-x:auto}
+        .proctor-bar{background:#1e293b;color:white;text-align:center;padding:0.7rem 2rem;border-radius:10px;font-weight:700;font-size:1rem;margin-bottom:1.5rem;letter-spacing:1px}
+        .hall-grid{display:grid;gap:12px;justify-content:start}
+        .bench-cell{border:2px solid #94a3b8;border-radius:10px;padding:8px;min-width:110px;min-height:80px;background:white;transition:all 0.2s;position:relative;cursor:pointer}
+        .bench-cell:hover{border-color:var(--primary-color);box-shadow:0 4px 12px rgba(99,102,241,.25);transform:translateY(-2px)}
+        .bench-cell.occupied-y1{border-color:#6366f1;background:#eef2ff}
+        .bench-cell.occupied-y2{border-color:#10b981;background:#ecfdf5}
+        .bench-cell.occupied-y3{border-color:#f59e0b;background:#fffbeb}
+        .bench-cell.occupied-y4{border-color:#ef4444;background:#fef2f2}
+        .bench-cell.empty{background:#f8fafc;border-style:dashed;border-color:#cbd5e1}
+        .bench-num{font-size:0.7rem;color:#94a3b8;font-weight:600;margin-bottom:4px}
+        .student-roll{font-size:0.8rem;font-weight:700;color:#1e293b}
+        .student-name{font-size:0.72rem;color:#475569;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .year-badge{display:inline-block;font-size:0.65rem;font-weight:700;padding:2px 6px;border-radius:20px;margin-top:3px}
+        .badge-y1{background:#e0e7ff;color:#4338ca}
+        .badge-y2{background:#d1fae5;color:#065f46}
+        .badge-y3{background:#fef3c7;color:#92400e}
+        .badge-y4{background:#fee2e2;color:#991b1b}
+        .seat-divider{border-top:1px dashed #e2e8f0;margin:5px 0}
+        .seat-sub{display:flex;flex-direction:column;gap:2px}
+        .empty-label{color:#cbd5e1;font-size:0.75rem;text-align:center;padding-top:12px}
+        /* Legend */
+        .legend{display:flex;flex-wrap:wrap;gap:12px;margin:1rem 0;padding:1rem;background:#f8fafc;border-radius:10px}
+        .legend-item{display:flex;align-items:center;gap:6px;font-size:0.8rem}
+        .legend-dot{width:14px;height:14px;border-radius:3px}
+        /* Filter bar */
+        .filter-bar{display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:1.5rem}
+        .filter-bar .form-group{flex:1;min-width:180px}
+        /* Print styles */
+        @media print{
+            .sidebar,.top-bar,.no-print{display:none!important}
+            .main-content{padding:0!important;margin:0!important}
+            .dashboard-container{display:block}
+            .print-header{display:block!important}
+            body{background:white}
+            .bench-cell{break-inside:avoid;min-height:70px}
+            .content-card{box-shadow:none;border:none;padding:0}
+        }
+        .print-header{display:none;text-align:center;margin-bottom:1.5rem;border-bottom:2px solid #1e293b;padding-bottom:1rem}
+        .print-header h1{font-size:1.4rem;margin:0}
+        .print-header p{color:#475569;margin:0.25rem 0}
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <aside class="sidebar no-print">
+        <div class="sidebar-logo"><i class="fas fa-graduation-cap"></i><h2>Exam Hall<br>Allocation</h2></div>
+        <ul class="sidebar-menu">
+            <li class="menu-item"><a href="dashboard.html"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
+            <li class="menu-item"><a href="students.html"><i class="fas fa-user-graduate"></i><span>Students</span></a></li>
+            <li class="menu-item"><a href="halls.html"><i class="fas fa-building"></i><span>Halls</span></a></li>
+            <li class="menu-item"><a href="exams.html"><i class="fas fa-calendar-alt"></i><span>Exams</span></a></li>
+            <li class="menu-item"><a href="allocate.html"><i class="fas fa-sitemap"></i><span>Allocate Seats</span></a></li>
+            <li class="menu-item"><a href="seatmap.html" class="active"><i class="fas fa-map"></i><span>Seat Map</span></a></li>
+        </ul>
+    </aside>
+    <main class="main-content">
+        <div class="top-bar no-print">
+            <h1 class="page-title">Visual Seat Map</h1>
+            <div class="user-menu">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">A</div>
+                    <div><div style="font-weight:600" id="userName">Admin</div></div>
+                </div>
+                <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="content-card no-print">
+            <div class="filter-bar">
+                <div class="form-group">
+                    <label><i class="fas fa-calendar"></i> Select Exam</label>
+                    <select id="examSelect" class="form-control" onchange="onExamChange()">
+                        <option value="">-- Select Exam --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-building"></i> Select Hall</label>
+                    <select id="hallSelect" class="form-control" onchange="loadSeatMap()">
+                        <option value="">-- Select Hall --</option>
+                    </select>
+                </div>
+                <div class="form-group" style="max-width:160px">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-success" style="width:100%" onclick="window.print()">
+                        <i class="fas fa-print"></i> Print Layout
+                    </button>
+                </div>
+                <div class="form-group" style="max-width:160px">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-info" style="width:100%" onclick="window.location.href='allocate.html'">
+                        <i class="fas fa-edit"></i> Edit Allocation
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend no-print" id="legendBar" style="display:none">
+            <div class="legend-item"><div class="legend-dot" style="background:#eef2ff;border:2px solid #6366f1"></div> Year 1</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#ecfdf5;border:2px solid #10b981"></div> Year 2</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#fffbeb;border:2px solid #f59e0b"></div> Year 3</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#fee2e2;border:2px solid #ef4444"></div> Year 4</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#f8fafc;border:2px dashed #cbd5e1"></div> Empty</div>
+        </div>
+
+        <!-- Print Header (only visible on print) -->
+        <div class="print-header" id="printHeader">
+            <h1 id="printTitle">Seating Arrangement</h1>
+            <p id="printSubtitle"></p>
+            <p id="printHallInfo"></p>
+        </div>
+
+        <!-- Seat Map -->
+        <div class="content-card" id="seatMapCard" style="display:none">
+            <div class="card-header no-print">
+                <h2 class="card-title" id="seatMapTitle"><i class="fas fa-map"></i> Seat Map</h2>
+                <div id="seatStats" style="font-size:0.9rem;color:var(--text-secondary)"></div>
+            </div>
+            <div id="seatMapContainer"></div>
+        </div>
+
+        <!-- No data state -->
+        <div class="content-card" id="noDataCard">
+            <div style="text-align:center;padding:4rem;color:var(--text-secondary)">
+                <i class="fas fa-map" style="font-size:4rem;opacity:.2;margin-bottom:1rem;display:block"></i>
+                <h3>Select an exam and hall to view the seat map</h3>
+                <p style="margin-top:.5rem">The visual seating arrangement will appear here</p>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="../js/config.js"></script>
+<script>
+checkAuth('admin');
+const user=getUser();
+if(user){document.getElementById('userName').textContent=user.username;document.getElementById('userAvatar').textContent=user.username.charAt(0).toUpperCase();}
+
+let allExams=[], allHalls=[], currentSeatData=null;
+
+// Year → CSS class/badge
+const yearClass={1:'occupied-y1',2:'occupied-y2',3:'occupied-y3',4:'occupied-y4'};
+const yearBadge={1:'badge-y1',2:'badge-y2',3:'badge-y3',4:'badge-y4'};
+
+async function init(){
+    try{
+        allExams=await apiRequest(API.EXAMS);
+        allHalls=await apiRequest(API.HALLS);
+        document.getElementById('examSelect').innerHTML='<option value="">-- Select Exam --</option>'+
+            allExams.map(e=>`<option value="${e.exam_id}">${e.exam_name} - ${e.subject} (${formatDate(e.exam_date)})</option>`).join('');
+
+        // Auto-load from URL params
+        const params=new URLSearchParams(window.location.search);
+        if(params.get('exam_id')){
+            document.getElementById('examSelect').value=params.get('exam_id');
+            await onExamChange();
+            if(params.get('hall_id')){
+                document.getElementById('hallSelect').value=params.get('hall_id');
+                await loadSeatMap();
+                if(params.get('print')=='1') setTimeout(()=>window.print(),800);
+            }
+        }
+    }catch(e){console.error(e);}
+}
+
+async function onExamChange(){
+    const examId=document.getElementById('examSelect').value;
+    if(!examId){document.getElementById('hallSelect').innerHTML='<option value="">-- Select Hall --</option>';return;}
+    try{
+        const allocations=await apiRequest(API.EXAM_ALLOCATIONS(examId));
+        const usedHallIds=[...new Set(allocations.map(a=>a.hall_id))];
+        const usedHalls=allHalls.filter(h=>usedHallIds.includes(h.hall_id));
+        document.getElementById('hallSelect').innerHTML='<option value="">-- Select Hall --</option>'+
+            usedHalls.map(h=>`<option value="${h.hall_id}">${h.hall_name}</option>`).join('');
+        if(usedHalls.length===1){document.getElementById('hallSelect').value=usedHalls[0].hall_id;await loadSeatMap();}
+    }catch(e){
+        // If no allocations, show all halls
+        document.getElementById('hallSelect').innerHTML='<option value="">-- Select Hall --</option>'+
+            allHalls.map(h=>`<option value="${h.hall_id}">${h.hall_name}</option>`).join('');
+    }
+}
+
+async function loadSeatMap(){
+    const examId=document.getElementById('examSelect').value;
+    const hallId=document.getElementById('hallSelect').value;
+    if(!examId||!hallId){document.getElementById('seatMapCard').style.display='none';document.getElementById('noDataCard').style.display='block';return;}
+
+    try{
+        const data=await apiRequest(API.SEATING_PLAN(examId,hallId));
+        currentSeatData=data;
+        const exam=allExams.find(e=>e.exam_id==examId);
+        const hall=data.hall;
+
+        // Update print header
+        document.getElementById('printTitle').textContent=`Seating Arrangement — ${exam?.exam_name||''}`;
+        document.getElementById('printSubtitle').textContent=`${exam?.subject||''} | Date: ${exam?formatDate(exam.exam_date):''} | Time: ${exam?formatTime(exam.start_time):''} – ${exam?formatTime(exam.end_time):''}`;
+        document.getElementById('printHallInfo').textContent=`Hall: ${hall.hall_name}, ${hall.building}, Floor ${hall.floor} | Rows: ${hall.total_rows}, Columns: ${hall.total_columns}`;
+
+        // Stats
+        const occupied=data.seats.flat().filter(s=>s.occupied).length;
+        const total=data.seats.flat().length;
+        document.getElementById('seatMapTitle').innerHTML=`<i class="fas fa-map"></i> ${hall.hall_name} — Seat Map`;
+        document.getElementById('seatStats').textContent=`${occupied} occupied / ${total} total seats`;
+
+        renderSeatMap(data, hall);
+        document.getElementById('seatMapCard').style.display='block';
+        document.getElementById('noDataCard').style.display='none';
+        document.getElementById('legendBar').style.display='flex';
+    }catch(e){
+        showAlert('Failed to load seat map: '+e.message,'error');
+    }
+}
+
+function renderSeatMap(data, hall){
+    const container=document.getElementById('seatMapContainer');
+
+    // Proctor bar
+    let html=`<div class="seatmap-wrapper">
+        <div class="proctor-bar">
+            <i class="fas fa-chalkboard-teacher"></i> &nbsp;INVIGILATOR / PROCTOR DESK
+        </div>
+        <div class="hall-grid" style="grid-template-columns:repeat(${hall.total_columns},minmax(115px,1fr))">`;
+
+    // Build lookup: "row-col" → array of students
+    const lookup={};
+    data.seats.forEach(row=>row.forEach(seat=>{
+        const key=`${seat.row}-${seat.column}`;
+        lookup[key]=seat;
+    }));
+
+    for(let r=1;r<=hall.total_rows;r++){
+        for(let c=1;c<=hall.total_columns;c++){
+            const seat=lookup[`${r}-${c}`];
+            if(!seat){html+=`<div class="bench-cell empty"><div class="bench-num">R${r}C${c}</div><div class="empty-label">Empty</div></div>`;continue;}
+
+            const yr=seat.students&&seat.students.length?seat.students[0].year:null;
+            const cls=yr?yearClass[yr]||'occupied-y1':'empty';
+            const seatLabel=seat.seat_number||`${String.fromCharCode(64+r)}${c}`;
+
+            let innerHtml='';
+            if(seat.students&&seat.students.length){
+                seat.students.forEach((s,i)=>{
+                    const badge=yearBadge[s.year]||'badge-y1';
+                    if(i>0)innerHtml+=`<div class="seat-divider"></div>`;
+                    innerHtml+=`<div class="seat-sub">
+                        <div class="student-roll">${s.roll_number||''}</div>
+                        <div class="student-name">${s.student_name||s.name||''}</div>
+                        <span class="year-badge ${badge}">${s.branch||''} Y${s.year||''}</span>
+                    </div>`;
+                });
+            }else{
+                innerHtml=`<div class="empty-label">Empty</div>`;
+            }
+
+            html+=`<div class="bench-cell ${cls}" title="${seatLabel}">
+                <div class="bench-num">🪑 ${seatLabel}</div>
+                ${innerHtml}
+            </div>`;
+        }
+    }
+
+    html+=`</div></div>`;
+    container.innerHTML=html;
+}
+
+init();
+</script>
+</body>
+</html>

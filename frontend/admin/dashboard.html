@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Exam Hall Allocation</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <i class="fas fa-graduation-cap"></i>
+                <h2>Exam Hall<br>Allocation</h2>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="menu-item">
+                    <a href="dashboard.html" class="active">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="students.html">
+                        <i class="fas fa-user-graduate"></i>
+                        <span>Students</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="halls.html">
+                        <i class="fas fa-building"></i>
+                        <span>Halls</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="exams.html">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Exams</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="allocate.html">
+                        <i class="fas fa-sitemap"></i>
+                        <span>Allocate Seats</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <h1 class="page-title">Dashboard</h1>
+                <div class="user-menu">
+                    <div class="user-info">
+                        <div class="user-avatar" id="userAvatar">A</div>
+                        <div>
+                            <div style="font-weight: 600;" id="userName">Admin</div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">Administrator</div>
+                        </div>
+                    </div>
+                    <button class="btn-logout" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card">
+                    <div class="stat-icon primary">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalStudents">-</h3>
+                        <p>Total Students</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon success">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalHalls">-</h3>
+                        <p>Exam Halls</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon warning">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalExams">-</h3>
+                        <p>Scheduled Exams</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon danger">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalAllocations">-</h3>
+                        <p>Allocations Made</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h2 class="card-title">Quick Actions</h2>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <a href="students.html" class="btn btn-primary" style="padding: 1.5rem; justify-content: center;">
+                        <i class="fas fa-user-plus"></i> Add Students
+                    </a>
+                    <a href="halls.html" class="btn btn-success" style="padding: 1.5rem; justify-content: center;">
+                        <i class="fas fa-building"></i> Manage Halls
+                    </a>
+                    <a href="exams.html" class="btn btn-warning" style="padding: 1.5rem; justify-content: center;">
+                        <i class="fas fa-calendar-plus"></i> Schedule Exam
+                    </a>
+                    <a href="allocate.html" class="btn btn-info" style="padding: 1.5rem; justify-content: center;">
+                        <i class="fas fa-sitemap"></i> Allocate Seats
+                    </a>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h2 class="card-title">System Information</h2>
+                </div>
+                <div style="padding: 1rem; background: var(--light); border-radius: 12px;">
+                    <h3 style="margin-bottom: 1rem;">Welcome to Exam Hall Allocation System</h3>
+                    <p style="color: var(--text-secondary); line-height: 1.8;">
+                        This system helps you efficiently manage exam hall allocations. You can add students, 
+                        configure exam halls, schedule exams, and automatically allocate seats based on 
+                        customizable rules. The system ensures fair distribution and prevents conflicts.
+                    </p>
+                    <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                        <h4 style="margin-bottom: 0.5rem;">Getting Started:</h4>
+                        <ul style="list-style-position: inside; color: var(--text-secondary); line-height: 2;">
+                            <li>Add student records or import from Excel</li>
+                            <li>Configure exam halls with seating capacity</li>
+                            <li>Schedule exams with details</li>
+                            <li>Run the allocation algorithm</li>
+                            <li>Generate and download seating plans</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script>
+        // Check authentication
+        checkAuth('admin');
+
+        // Load user info
+        const user = getUser();
+        if (user) {
+            document.getElementById('userName').textContent = user.username;
+            document.getElementById('userAvatar').textContent = user.username.charAt(0).toUpperCase();
+        }
+
+        // Load dashboard statistics
+        async function loadStats() {
+            try {
+                const stats = await apiRequest(API.DASHBOARD_STATS);
+                
+                document.getElementById('totalStudents').textContent = stats.students || 0;
+                document.getElementById('totalHalls').textContent = stats.halls || 0;
+                document.getElementById('totalExams').textContent = stats.exams || 0;
+                document.getElementById('totalAllocations').textContent = stats.allocations || 0;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load stats on page load
+        loadStats();
+    </script>
+</body>
+</html>

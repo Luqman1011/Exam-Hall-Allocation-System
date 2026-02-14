@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exams - Admin Dashboard</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <i class="fas fa-graduation-cap"></i>
+                <h2>Exam Hall<br>Allocation</h2>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="menu-item">
+                    <a href="dashboard.html">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="students.html">
+                        <i class="fas fa-user-graduate"></i>
+                        <span>Students</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="halls.html">
+                        <i class="fas fa-building"></i>
+                        <span>Halls</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="exams.html" class="active">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Exams</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="allocate.html">
+                        <i class="fas fa-sitemap"></i>
+                        <span>Allocate Seats</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <h1 class="page-title">Exam Management</h1>
+                <div class="user-menu">
+                    <div class="user-info">
+                        <div class="user-avatar" id="userAvatar">A</div>
+                        <div>
+                            <div style="font-weight: 600;" id="userName">Admin</div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">Administrator</div>
+                        </div>
+                    </div>
+                    <button class="btn-logout" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="content-card">
+                <button class="btn btn-primary" onclick="showAddModal()">
+                    <i class="fas fa-plus"></i> Schedule Exam
+                </button>
+            </div>
+
+            <!-- Exams Table -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h2 class="card-title">All Exams</h2>
+                </div>
+                <div class="table-container">
+                    <div id="examsTable">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Loading exams...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Exam Modal -->
+    <div id="examModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 2rem; border-radius: 20px; max-width: 700px; width: 90%; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 id="modalTitle">Schedule Exam</h2>
+                <button onclick="closeModal()" style="background: none; font-size: 1.5rem; color: var(--text-secondary);">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="examForm" onsubmit="saveExam(event)">
+                <input type="hidden" id="examId">
+                
+                <div class="form-group">
+                    <label>Exam Name *</label>
+                    <input type="text" id="exam_name" class="form-control" required placeholder="e.g., Mid Semester Exam">
+                </div>
+
+                <div class="form-group">
+                    <label>Subject *</label>
+                    <input type="text" id="subject" class="form-control" required placeholder="e.g., Data Structures">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Exam Date *</label>
+                        <input type="date" id="exam_date" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="status" class="form-control">
+                            <option value="pending">Pending</option>
+                            <option value="allocated">Allocated</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Start Time *</label>
+                        <input type="time" id="start_time" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>End Time *</label>
+                        <input type="time" id="end_time" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Branch</label>
+                    <select id="branch" class="form-control">
+                        <option value="">All Branches</option>
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="Information Technology">Information Technology</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Mechanical">Mechanical</option>
+                        <option value="Civil">Civil</option>
+                        <option value="Electrical">Electrical</option>
+                    </select>
+                    <small style="color: var(--text-secondary); margin-top: 0.5rem; display: block;">
+                        Leave empty for all branches
+                    </small>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Year</label>
+                        <select id="year" class="form-control">
+                            <option value="">All Years</option>
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Semester</label>
+                        <select id="semester" class="form-control">
+                            <option value="">All Semesters</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                    <button type="button" onclick="closeModal()" class="btn btn-secondary" style="flex: 1;">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script>
+        checkAuth('admin');
+        const user = getUser();
+        if (user) {
+            document.getElementById('userName').textContent = user.username;
+            document.getElementById('userAvatar').textContent = user.username.charAt(0).toUpperCase();
+        }
+
+        let allExams = [];
+
+        // Load exams
+        async function loadExams() {
+            try {
+                allExams = await apiRequest(API.EXAMS);
+                displayExams(allExams);
+            } catch (error) {
+                console.error('Error loading exams:', error);
+                document.getElementById('examsTable').innerHTML = `
+                    <div class="alert alert-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Failed to load exams</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Display exams
+        function displayExams(exams) {
+            if (exams.length === 0) {
+                document.getElementById('examsTable').innerHTML = `
+                    <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                        <i class="fas fa-calendar-times" style="font-size: 4rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+                        <p>No exams scheduled</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const getStatusBadge = (status) => {
+                const colors = {
+                    pending: 'background: #fbbf24; color: #78350f;',
+                    allocated: 'background: #10b981; color: white;',
+                    completed: 'background: #6b7280; color: white;'
+                };
+                return `<span style="padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; ${colors[status] || ''}">${status.toUpperCase()}</span>`;
+            };
+
+            const tableHtml = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Exam Name</th>
+                            <th>Subject</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Branch</th>
+                            <th>Year</th>
+                            <th>Sem</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${exams.map(exam => `
+                            <tr>
+                                <td><strong>${exam.exam_name}</strong></td>
+                                <td>${exam.subject}</td>
+                                <td><i class="fas fa-calendar"></i> ${formatDate(exam.exam_date)}</td>
+                                <td><i class="fas fa-clock"></i> ${formatTime(exam.start_time)} - ${formatTime(exam.end_time)}</td>
+                                <td>${exam.branch || 'All'}</td>
+                                <td>${exam.year || 'All'}</td>
+                                <td>${exam.semester || 'All'}</td>
+                                <td>${getStatusBadge(exam.status)}</td>
+                                <td>
+                                    <button class="btn-sm btn-info" onclick="viewEligible(${exam.exam_id})" title="View Eligible Students">
+                                        <i class="fas fa-users"></i>
+                                    </button>
+                                    <button class="btn-sm btn-warning" onclick="editExam(${exam.exam_id})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-sm btn-danger" onclick="deleteExam(${exam.exam_id})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('examsTable').innerHTML = tableHtml;
+        }
+
+        // Show add modal
+        function showAddModal() {
+            document.getElementById('modalTitle').textContent = 'Schedule Exam';
+            document.getElementById('examForm').reset();
+            document.getElementById('examId').value = '';
+            document.getElementById('status').value = 'pending';
+            
+            // Set default date to tomorrow
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('exam_date').value = tomorrow.toISOString().split('T')[0];
+            
+            document.getElementById('examModal').style.display = 'flex';
+        }
+
+        // Edit exam
+        async function editExam(id) {
+            const exam = allExams.find(e => e.exam_id === id);
+            if (!exam) return;
+
+            document.getElementById('modalTitle').textContent = 'Edit Exam';
+            document.getElementById('examId').value = exam.exam_id;
+            document.getElementById('exam_name').value = exam.exam_name;
+            document.getElementById('subject').value = exam.subject;
+            document.getElementById('exam_date').value = exam.exam_date;
+            document.getElementById('start_time').value = exam.start_time;
+            document.getElementById('end_time').value = exam.end_time;
+            document.getElementById('branch').value = exam.branch || '';
+            document.getElementById('year').value = exam.year || '';
+            document.getElementById('semester').value = exam.semester || '';
+            document.getElementById('status').value = exam.status;
+            document.getElementById('examModal').style.display = 'flex';
+        }
+
+        // Save exam
+        async function saveExam(event) {
+            event.preventDefault();
+
+            const examId = document.getElementById('examId').value;
+            const data = {
+                exam_name: document.getElementById('exam_name').value,
+                subject: document.getElementById('subject').value,
+                exam_date: document.getElementById('exam_date').value,
+                start_time: document.getElementById('start_time').value,
+                end_time: document.getElementById('end_time').value,
+                branch: document.getElementById('branch').value || null,
+                year: parseInt(document.getElementById('year').value) || null,
+                semester: parseInt(document.getElementById('semester').value) || null,
+                status: document.getElementById('status').value
+            };
+
+            try {
+                if (examId) {
+                    // Update
+                    await apiRequest(`${API.EXAMS}/${examId}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(data)
+                    });
+                    showAlert('Exam updated successfully');
+                } else {
+                    // Add
+                    await apiRequest(API.EXAMS, {
+                        method: 'POST',
+                        body: JSON.stringify(data)
+                    });
+                    showAlert('Exam scheduled successfully');
+                }
+                closeModal();
+                loadExams();
+            } catch (error) {
+                showAlert(error.message, 'error');
+            }
+        }
+
+        // Delete exam
+        async function deleteExam(id) {
+            if (!confirm('Are you sure you want to delete this exam? This will also delete all allocations.')) return;
+
+            try {
+                await apiRequest(`${API.EXAMS}/${id}`, { method: 'DELETE' });
+                showAlert('Exam deleted successfully');
+                loadExams();
+            } catch (error) {
+                showAlert(error.message, 'error');
+            }
+        }
+
+        // View eligible students
+        async function viewEligible(examId) {
+            try {
+                const students = await apiRequest(API.ELIGIBLE_STUDENTS(examId));
+                
+                if (students.length === 0) {
+                    alert('No eligible students found for this exam.');
+                    return;
+                }
+                
+                alert(`Eligible Students: ${students.length}\n\n${students.slice(0, 10).map(s => `${s.roll_number} - ${s.name}`).join('\n')}${students.length > 10 ? '\n... and more' : ''}`);
+            } catch (error) {
+                showAlert('Failed to load eligible students', 'error');
+            }
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('examModal').style.display = 'none';
+        }
+
+        // Load on page load
+        loadExams();
+    </script>
+</body>
+</html>

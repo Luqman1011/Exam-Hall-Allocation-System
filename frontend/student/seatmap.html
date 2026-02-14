@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Seat - Exam Hall Allocation System</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .seat-map-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .my-allocation-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .allocation-header {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .allocation-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .detail-item {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .seat-grid {
+            display: inline-block;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        .seat-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .seat {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .seat.occupied {
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .seat.empty {
+            background: #f5f5f5;
+            color: #999;
+        }
+
+        .seat.my-seat {
+            background: #4CAF50;
+            color: white;
+            border-color: #45a049;
+            transform: scale(1.2);
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(76, 175, 80, 0.8);
+            }
+        }
+
+        .front-board {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-box {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            border: 2px solid #ddd;
+        }
+
+        .legend-box.my-seat {
+            background: #4CAF50;
+        }
+
+        .legend-box.occupied {
+            background: #e0e0e0;
+        }
+
+        .legend-box.empty {
+            background: #f5f5f5;
+        }
+
+        .exam-selector {
+            margin-bottom: 20px;
+        }
+
+        .exam-selector select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+
+        .no-allocation {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .no-allocation-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #2196F3;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #1976D2;
+            transform: translateY(-2px);
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="no-print">
+        <div class="nav-container">
+            <div class="nav-brand">Exam Hall System - Student</div>
+            <div class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="seatmap.html" class="active">My Seat</a>
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="seat-map-container">
+        <h1 class="no-print">My Seat Allocation</h1>
+
+        <div class="exam-selector no-print">
+            <select id="examSelect" onchange="loadSeatMap()">
+                <option value="">Select Exam</option>
+            </select>
+        </div>
+
+        <div id="allocationContainer"></div>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script>
+        let userData = null;
+
+        async function loadExams() {
+            try {
+                const token = localStorage.getItem('token');
+                userData = JSON.parse(localStorage.getItem('user'));
+
+                const response = await fetch(`${API_URL}/api/exams`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch exams');
+
+                const exams = await response.json();
+                const select = document.getElementById('examSelect');
+                select.innerHTML = '<option value="">Select Exam</option>';
+                
+                exams.filter(e => e.status === 'allocated').forEach(exam => {
+                    const option = document.createElement('option');
+                    option.value = exam.exam_id;
+                    option.textContent = `${exam.exam_name} - ${exam.subject} (${new Date(exam.exam_date).toLocaleDateString()})`;
+                    select.appendChild(option);
+                });
+
+                // Auto-load first exam if available
+                if (exams.length > 0) {
+                    select.value = exams[0].exam_id;
+                    loadSeatMap();
+                }
+            } catch (error) {
+                console.error('Error loading exams:', error);
+                alert('Failed to load exams');
+            }
+        }
+
+        async function loadSeatMap() {
+            const examId = document.getElementById('examSelect').value;
+            if (!examId) return;
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_URL}/api/allocations/student/seatmap/${examId}/${userData.student_id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.status === 404) {
+                    showNoAllocation();
+                    return;
+                }
+
+                if (!response.ok) throw new Error('Failed to fetch seat map');
+
+                const data = await response.json();
+                renderSeatMap(data);
+            } catch (error) {
+                console.error('Error loading seat map:', error);
+                showNoAllocation();
+            }
+        }
+
+        function renderSeatMap(data) {
+            const container = document.getElementById('allocationContainer');
+            const alloc = data.myAllocation;
+            const hall = data.hall;
+
+            let html = `
+                <div class="my-allocation-card">
+                    <div class="allocation-header">📍 Your Seat Assignment</div>
+                    <div class="allocation-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Hall</div>
+                            <div class="detail-value">${hall.hall_name}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Location</div>
+                            <div class="detail-value">${hall.building}, Floor ${hall.floor}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Seat Number</div>
+                            <div class="detail-value">${alloc.seat_number}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Position</div>
+                            <div class="detail-value">Row ${alloc.row_number}, Col ${alloc.column_number}</div>
+                        </div>
+                    </div>
+                    <button onclick="window.print()" class="btn no-print">Print This Page</button>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-box my-seat"></div>
+                        <span><strong>Your Seat</strong></span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-box occupied"></div>
+                        <span>Occupied</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-box empty"></div>
+                        <span>Empty</span>
+                    </div>
+                </div>
+
+                <div style="text-align: center;">
+                    <div class="seat-grid">
+                        <div class="front-board">FRONT / EXAM BOARD</div>
+            `;
+
+            data.seats.forEach((row, rowIndex) => {
+                html += '<div class="seat-row">';
+                row.forEach(seat => {
+                    let seatClass = 'seat ';
+                    if (seat.isMySeat) {
+                        seatClass += 'my-seat';
+                    } else if (seat.occupied) {
+                        seatClass += 'occupied';
+                    } else {
+                        seatClass += 'empty';
+                    }
+                    
+                    html += `
+                        <div class="${seatClass}">
+                            ${seat.seat_number}
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            });
+
+            html += '</div></div>';
+
+            container.innerHTML = html;
+        }
+
+        function showNoAllocation() {
+            const container = document.getElementById('allocationContainer');
+            container.innerHTML = `
+                <div class="no-allocation">
+                    <div class="no-allocation-icon">📋</div>
+                    <h2>No Seat Allocated</h2>
+                    <p>You have not been allocated a seat for this exam yet.</p>
+                    <p>Please check back later or contact your administrator.</p>
+                </div>
+            `;
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        // Initialize
+        window.onload = () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+            loadExams();
+        };
+    </script>
+</body>
+</html>

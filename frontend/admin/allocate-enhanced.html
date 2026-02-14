@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Seat Allocation - Admin</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .allocation-container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .radio-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .radio-option {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .radio-option:hover {
+            border-color: #2196F3;
+            background: #f5f9ff;
+        }
+
+        .radio-option input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        .radio-option.selected {
+            border-color: #2196F3;
+            background: #e3f2fd;
+        }
+
+        .option-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .option-desc {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .checkbox-option {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .checkbox-option:hover {
+            background: #f5f5f5;
+        }
+
+        .checkbox-option input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 15px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .info-box strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #1976D2;
+        }
+
+        .result-container {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .success-message {
+            background: #4CAF50;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2196F3;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab-button {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab-button.active {
+            color: #2196F3;
+            border-bottom-color: #2196F3;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <div class="nav-brand">Exam Hall System - Admin</div>
+            <div class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="halls.html">Halls</a>
+                <a href="students.html">Students</a>
+                <a href="exams.html">Exams</a>
+                <a href="allocate-enhanced.html" class="active">Allocate</a>
+                <a href="seatmap.html">Seat Map</a>
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="allocation-container">
+        <h1>Enhanced Seat Allocation System</h1>
+
+        <div class="tab-buttons">
+            <button class="tab-button active" onclick="switchTab('automatic')">Automatic Allocation</button>
+            <button class="tab-button" onclick="switchTab('manual')">Manual Allocation</button>
+        </div>
+
+        <!-- Automatic Allocation Tab -->
+        <div id="automatic-tab" class="tab-content active">
+            <form id="allocationForm" onsubmit="runAllocation(event)">
+                <div class="card">
+                    <div class="card-header">
+                        📋 Select Exam
+                    </div>
+                    <div class="form-group">
+                        <label>Choose Exam *</label>
+                        <select id="exam_id" class="form-control" required onchange="loadExamInfo()">
+                            <option value="">-- Select an Exam --</option>
+                        </select>
+                    </div>
+                    <div id="examInfo" style="display: none;"></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        🎯 Allocation Method
+                    </div>
+                    <div class="radio-group" id="allocationMethods">
+                        <label class="radio-option" onclick="selectMethod('standard')">
+                            <input type="radio" name="allocation_method" value="standard" checked>
+                            <div>
+                                <div class="option-title">Standard Gap-Based</div>
+                                <div class="option-desc">Traditional allocation with configurable gaps between students</div>
+                            </div>
+                        </label>
+                        <label class="radio-option" onclick="selectMethod('branch_segregated')">
+                            <input type="radio" name="allocation_method" value="branch_segregated">
+                            <div>
+                                <div class="option-title">Branch Segregated</div>
+                                <div class="option-desc">Group students by branch, different branches side-by-side</div>
+                            </div>
+                        </label>
+                        <label class="radio-option" onclick="selectMethod('zigzag')">
+                            <input type="radio" name="allocation_method" value="zigzag">
+                            <div>
+                                <div class="option-title">Zigzag Pattern</div>
+                                <div class="option-desc">Alternate branches in adjacent seats for maximum mixing</div>
+                            </div>
+                        </label>
+                        <label class="radio-option" onclick="selectMethod('year_segregated')">
+                            <input type="radio" name="allocation_method" value="year_segregated">
+                            <div>
+                                <div class="option-title">Year Segregated</div>
+                                <div class="option-desc">Group students by year, mix branches within each year</div>
+                            </div>
+                        </label>
+                        <label class="radio-option" onclick="selectMethod('optimized')">
+                            <input type="radio" name="allocation_method" value="optimized">
+                            <div>
+                                <div class="option-title">Optimized Capacity</div>
+                                <div class="option-desc">Maximize hall utilization by filling largest halls first</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        ⚙️ Allocation Settings
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Bench Capacity (Students per Bench)</label>
+                        <input type="number" id="bench_capacity" class="form-control" min="1" max="4" value="1">
+                        <small style="color: #666; margin-top: 5px; display: block;">How many students can sit on one bench (default: 1)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Gap Between Students (for Standard method)</label>
+                        <input type="number" id="gap" class="form-control" min="0" max="5" value="1">
+                        <small style="color: #666; margin-top: 5px; display: block;">Number of empty seats between students (default: 1)</small>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <label class="checkbox-option">
+                            <input type="checkbox" id="mix_branches">
+                            <span>Mix students from different branches randomly</span>
+                        </label>
+                        <label class="checkbox-option">
+                            <input type="checkbox" id="mix_years">
+                            <span>Mix students from different years randomly</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary">
+                        🚀 Run Allocation
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                        🔄 Reset
+                    </button>
+                </div>
+            </form>
+
+            <div id="resultContainer" class="result-container"></div>
+        </div>
+
+        <!-- Manual Allocation Tab -->
+        <div id="manual-tab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    ✋ Manual Seat Allocation
+                </div>
+                <div class="info-box">
+                    <strong>Manual Allocation</strong>
+                    Allocate specific students to specific seats. This is useful for special cases or adjustments.
+                </div>
+                
+                <div class="form-group">
+                    <label>Select Exam</label>
+                    <select id="manual_exam_id" class="form-control" onchange="loadStudentsForManual()">
+                        <option value="">-- Select an Exam --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Select Student</label>
+                    <select id="manual_student_id" class="form-control">
+                        <option value="">-- Select a Student --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Select Hall</label>
+                    <select id="manual_hall_id" class="form-control" onchange="loadHallLayout()">
+                        <option value="">-- Select a Hall --</option>
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Row Number</label>
+                        <input type="number" id="manual_row" class="form-control" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Column Number</label>
+                        <input type="number" id="manual_column" class="form-control" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Bench Position</label>
+                        <input type="number" id="manual_bench" class="form-control" min="1" value="1">
+                    </div>
+                </div>
+
+                <button onclick="manualAllocate()" class="btn btn-primary">
+                    ✅ Allocate Student
+                </button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    🔄 Swap Seats
+                </div>
+                <div class="info-box">
+                    <strong>Swap Functionality</strong>
+                    Exchange seats between two students for the same exam.
+                </div>
+
+                <div class="form-group">
+                    <label>Select Exam</label>
+                    <select id="swap_exam_id" class="form-control" onchange="loadAllocatedStudents()">
+                        <option value="">-- Select an Exam --</option>
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Student 1</label>
+                        <select id="swap_student_1" class="form-control">
+                            <option value="">-- Select Student 1 --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Student 2</label>
+                        <select id="swap_student_2" class="form-control">
+                            <option value="">-- Select Student 2 --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button onclick="swapSeats()" class="btn btn-primary">
+                    🔄 Swap Seats
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script>
+        let currentTab = 'automatic';
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tab + '-tab').classList.add('active');
+        }
+
+        function selectMethod(method) {
+            document.querySelectorAll('.radio-option').forEach(opt => opt.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+        }
+
+        async function loadExams() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_URL}/api/exams`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const exams = await response.json();
+                
+                ['exam_id', 'manual_exam_id', 'swap_exam_id'].forEach(id => {
+                    const select = document.getElementById(id);
+                    select.innerHTML = '<option value="">-- Select an Exam --</option>';
+                    exams.filter(e => e.status === 'pending' || e.status === 'allocated').forEach(exam => {
+                        const option = document.createElement('option');
+                        option.value = exam.exam_id;
+                        option.textContent = `${exam.exam_name} - ${exam.subject}`;
+                        select.appendChild(option);
+                    });
+                });
+            } catch (error) {
+                console.error('Error loading exams:', error);
+            }
+        }
+
+        async function loadExamInfo() {
+            const examId = document.getElementById('exam_id').value;
+            if (!examId) {
+                document.getElementById('examInfo').style.display = 'none';
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_URL}/api/exams/${examId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const exam = await response.json();
+                
+                document.getElementById('examInfo').innerHTML = `
+                    <div class="info-box">
+                        <strong>${exam.exam_name} - ${exam.subject}</strong>
+                        <div style="margin-top: 10px;">
+                            Date: ${new Date(exam.exam_date).toLocaleDateString()} | 
+                            Time: ${exam.start_time} - ${exam.end_time}
+                        </div>
+                    </div>
+                `;
+                document.getElementById('examInfo').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading exam info:', error);
+            }
+        }
+
+        async function runAllocation(event) {
+            event.preventDefault();
+            
+            const examId = document.getElementById('exam_id').value;
+            const method = document.querySelector('input[name="allocation_method"]:checked').value;
+            const benchCapacity = parseInt(document.getElementById('bench_capacity').value);
+            const gap = parseInt(document.getElementById('gap').value);
+            const mixBranches = document.getElementById('mix_branches').checked;
+            const mixYears = document.getElementById('mix_years').checked;
+
+            const data = {
+                exam_id: examId,
+                allocation_rules: {
+                    allocation_method: method,
+                    bench_capacity: benchCapacity,
+                    gap_between_students: gap,
+                    mix_branches: mixBranches,
+                    mix_years: mixYears
+                }
+            };
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_URL}/api/allocations/allocate`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResult(result);
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Allocation error:', error);
+                alert('Failed to run allocation');
+            }
+        }
+
+        function showResult(result) {
+            const container = document.getElementById('resultContainer');
+            container.innerHTML = `
+                <div class="success-message">
+                    <h2>✅ Allocation Successful!</h2>
+                    <p>${result.message}</p>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">${result.allocated_count}</div>
+                        <div class="stat-label">Students Allocated</div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <a href="seatmap.html" class="btn btn-primary">View Seat Map</a>
+                </div>
+            `;
+            container.style.display = 'block';
+        }
+
+        async function manualAllocate() {
+            const data = {
+                exam_id: document.getElementById('manual_exam_id').value,
+                student_id: document.getElementById('manual_student_id').value,
+                hall_id: document.getElementById('manual_hall_id').value,
+                row_number: parseInt(document.getElementById('manual_row').value),
+                column_number: parseInt(document.getElementById('manual_column').value),
+                bench_position: parseInt(document.getElementById('manual_bench').value)
+            };
+
+            if (!data.exam_id || !data.student_id || !data.hall_id || !data.row_number || !data.column_number) {
+                alert('Please fill all fields');
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_URL}/api/allocations/manual`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                alert(result.message);
+            } catch (error) {
+                console.error('Manual allocation error:', error);
+                alert('Failed to allocate student');
+            }
+        }
+
+        async function swapSeats() {
+            const data = {
+                exam_id: document.getElementById('swap_exam_id').value,
+                student_id_1: document.getElementById('swap_student_1').value,
+                student_id_2: document.getElementById('swap_student_2').value
+            };
+
+            if (!data.exam_id || !data.student_id_1 || !data.student_id_2) {
+                alert('Please select all fields');
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_URL}/api/allocations/swap`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                alert(result.message);
+            } catch (error) {
+                console.error('Swap error:', error);
+                alert('Failed to swap seats');
+            }
+        }
+
+        async function loadHalls() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_URL}/api/halls`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const halls = await response.json();
+                
+                const select = document.getElementById('manual_hall_id');
+                select.innerHTML = '<option value="">-- Select a Hall --</option>';
+                halls.forEach(hall => {
+                    const option = document.createElement('option');
+                    option.value = hall.hall_id;
+                    option.textContent = hall.hall_name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading halls:', error);
+            }
+        }
+
+        async function loadStudentsForManual() {
+            const examId = document.getElementById('manual_exam_id').value;
+            if (!examId) return;
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_URL}/api/students`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const students = await response.json();
+                
+                const select = document.getElementById('manual_student_id');
+                select.innerHTML = '<option value="">-- Select a Student --</option>';
+                students.forEach(student => {
+                    const option = document.createElement('option');
+                    option.value = student.student_id;
+                    option.textContent = `${student.roll_number} - ${student.name}`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading students:', error);
+            }
+        }
+
+        async function loadAllocatedStudents() {
+            const examId = document.getElementById('swap_exam_id').value;
+            if (!examId) return;
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_URL}/api/allocations/exam/${examId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const allocations = await response.json();
+                
+                ['swap_student_1', 'swap_student_2'].forEach(id => {
+                    const select = document.getElementById(id);
+                    select.innerHTML = '<option value="">-- Select Student --</option>';
+                    allocations.forEach(alloc => {
+                        const option = document.createElement('option');
+                        option.value = alloc.student_id;
+                        option.textContent = `${alloc.roll_number} - ${alloc.seat_number}`;
+                        select.appendChild(option);
+                    });
+                });
+            } catch (error) {
+                console.error('Error loading allocated students:', error);
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('allocationForm').reset();
+            document.getElementById('examInfo').style.display = 'none';
+            document.getElementById('resultContainer').style.display = 'none';
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        window.onload = () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+            loadExams();
+            loadHalls();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halls - Admin Dashboard</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <i class="fas fa-graduation-cap"></i>
+                <h2>Exam Hall<br>Allocation</h2>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="menu-item">
+                    <a href="dashboard.html">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="students.html">
+                        <i class="fas fa-user-graduate"></i>
+                        <span>Students</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="halls.html" class="active">
+                        <i class="fas fa-building"></i>
+                        <span>Halls</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="exams.html">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Exams</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="allocate.html">
+                        <i class="fas fa-sitemap"></i>
+                        <span>Allocate Seats</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <h1 class="page-title">Hall Management</h1>
+                <div class="user-menu">
+                    <div class="user-info">
+                        <div class="user-avatar" id="userAvatar">A</div>
+                        <div>
+                            <div style="font-weight: 600;" id="userName">Admin</div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">Administrator</div>
+                        </div>
+                    </div>
+                    <button class="btn-logout" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="content-card">
+                <button class="btn btn-primary" onclick="showAddModal()">
+                    <i class="fas fa-plus"></i> Add Hall
+                </button>
+            </div>
+
+            <!-- Halls Grid -->
+            <div id="hallsGrid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading halls...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Hall Modal -->
+    <div id="hallModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 2rem; border-radius: 20px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 id="modalTitle">Add Hall</h2>
+                <button onclick="closeModal()" style="background: none; font-size: 1.5rem; color: var(--text-secondary);">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="hallForm" onsubmit="saveHall(event)">
+                <input type="hidden" id="hallId">
+                
+                <div class="form-group">
+                    <label>Hall Name *</label>
+                    <input type="text" id="hall_name" class="form-control" required placeholder="e.g., Hall A">
+                </div>
+
+                <div class="form-group">
+                    <label>Building</label>
+                    <input type="text" id="building" class="form-control" placeholder="e.g., Main Block">
+                </div>
+
+                <div class="form-group">
+                    <label>Floor</label>
+                    <input type="number" id="floor" class="form-control" placeholder="e.g., 1">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Rows *</label>
+                        <input type="number" id="rows" class="form-control" required min="1" onchange="calculateCapacity()">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Columns *</label>
+                        <input type="number" id="columns" class="form-control" required min="1" onchange="calculateCapacity()">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Total Capacity *</label>
+                    <input type="number" id="capacity" class="form-control" required min="1" readonly style="background: var(--light);">
+                    <small style="color: var(--text-secondary); margin-top: 0.5rem; display: block;">
+                        Capacity = Rows × Columns
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="is_available" checked style="width: 20px; height: 20px;">
+                        <span>Available for allocation</span>
+                    </label>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                    <button type="button" onclick="closeModal()" class="btn btn-secondary" style="flex: 1;">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script>
+        checkAuth('admin');
+        const user = getUser();
+        if (user) {
+            document.getElementById('userName').textContent = user.username;
+            document.getElementById('userAvatar').textContent = user.username.charAt(0).toUpperCase();
+        }
+
+        let allHalls = [];
+
+        // Calculate capacity
+        function calculateCapacity() {
+            const rows = parseInt(document.getElementById('rows').value) || 0;
+            const columns = parseInt(document.getElementById('columns').value) || 0;
+            document.getElementById('capacity').value = rows * columns;
+        }
+
+        // Load halls
+        async function loadHalls() {
+            try {
+                allHalls = await apiRequest(API.HALLS);
+                displayHalls(allHalls);
+            } catch (error) {
+                console.error('Error loading halls:', error);
+                document.getElementById('hallsGrid').innerHTML = `
+                    <div class="content-card">
+                        <div class="alert alert-error">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Failed to load halls</span>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Display halls
+        function displayHalls(halls) {
+            if (halls.length === 0) {
+                document.getElementById('hallsGrid').innerHTML = `
+                    <div class="content-card">
+                        <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                            <i class="fas fa-building" style="font-size: 4rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+                            <p>No halls found</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const hallsHtml = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
+                    ${halls.map(hall => `
+                        <div class="content-card" style="position: relative;">
+                            ${!hall.is_available ? `
+                                <div style="position: absolute; top: 1rem; right: 1rem;">
+                                    <span style="padding: 0.5rem 1rem; background: var(--danger-color); color: white; border-radius: 8px; font-size: 0.85rem;">
+                                        Unavailable
+                                    </span>
+                                </div>
+                            ` : ''}
+                            
+                            <div style="margin-bottom: 1.5rem;">
+                                <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--primary-color);">
+                                    <i class="fas fa-door-open"></i> ${hall.hall_name}
+                                </h3>
+                                <p style="color: var(--text-secondary);">
+                                    ${hall.building || 'N/A'} ${hall.floor ? `• Floor ${hall.floor}` : ''}
+                                </p>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                                <div style="padding: 1rem; background: var(--light); border-radius: 10px; text-align: center;">
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Capacity</div>
+                                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-color);">${hall.capacity}</div>
+                                </div>
+                                <div style="padding: 1rem; background: var(--light); border-radius: 10px; text-align: center;">
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Rows</div>
+                                    <div style="font-size: 1.5rem; font-weight: 700;">${hall.total_rows}</div>
+                                </div>
+                                <div style="padding: 1rem; background: var(--light); border-radius: 10px; text-align: center;">
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Columns</div>
+                                    <div style="font-size: 1.5rem; font-weight: 700;">${hall.total_columns}</div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn-sm btn-warning" onclick="editHall(${hall.hall_id})" style="flex: 1;">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn-sm btn-danger" onclick="deleteHall(${hall.hall_id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            document.getElementById('hallsGrid').innerHTML = hallsHtml;
+        }
+
+        // Show add modal
+        function showAddModal() {
+            document.getElementById('modalTitle').textContent = 'Add Hall';
+            document.getElementById('hallForm').reset();
+            document.getElementById('hallId').value = '';
+            document.getElementById('is_available').checked = true;
+            document.getElementById('hallModal').style.display = 'flex';
+        }
+
+        // Edit hall
+        async function editHall(id) {
+            const hall = allHalls.find(h => h.hall_id === id);
+            if (!hall) return;
+
+            document.getElementById('modalTitle').textContent = 'Edit Hall';
+            document.getElementById('hallId').value = hall.hall_id;
+            document.getElementById('hall_name').value = hall.hall_name;
+            document.getElementById('building').value = hall.building || '';
+            document.getElementById('floor').value = hall.floor || '';
+            document.getElementById('rows').value = hall.total_rows;
+            document.getElementById('columns').value = hall.total_columns;
+            document.getElementById('capacity').value = hall.capacity;
+            document.getElementById('is_available').checked = hall.is_available;
+            document.getElementById('hallModal').style.display = 'flex';
+        }
+
+        // Save hall
+        async function saveHall(event) {
+            event.preventDefault();
+
+            const hallId = document.getElementById('hallId').value;
+            const data = {
+                hall_name: document.getElementById('hall_name').value,
+                building: document.getElementById('building').value || null,
+                floor: parseInt(document.getElementById('floor').value) || null,
+                rows: parseInt(document.getElementById('rows').value),
+                columns: parseInt(document.getElementById('columns').value),
+                capacity: parseInt(document.getElementById('capacity').value),
+                is_available: document.getElementById('is_available').checked
+            };
+
+            try {
+                if (hallId) {
+                    // Update
+                    await apiRequest(`${API.HALLS}/${hallId}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(data)
+                    });
+                    showAlert('Hall updated successfully');
+                } else {
+                    // Add
+                    await apiRequest(API.HALLS, {
+                        method: 'POST',
+                        body: JSON.stringify(data)
+                    });
+                    showAlert('Hall added successfully');
+                }
+                closeModal();
+                loadHalls();
+            } catch (error) {
+                showAlert(error.message, 'error');
+            }
+        }
+
+        // Delete hall
+        async function deleteHall(id) {
+            if (!confirm('Are you sure you want to delete this hall?')) return;
+
+            try {
+                await apiRequest(`${API.HALLS}/${id}`, { method: 'DELETE' });
+                showAlert('Hall deleted successfully');
+                loadHalls();
+            } catch (error) {
+                showAlert(error.message, 'error');
+            }
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('hallModal').style.display = 'none';
+        }
+
+        // Load on page load
+        loadHalls();
+    </script>
+</body>
+</html>
