@@ -1,0 +1,14 @@
+INSTALLATION INSTRUCTIONS:
+
+1. Extract this ZIP file
+2. Navigate to backend folder: cd backend
+3. Install dependencies: npm install
+4. Make sure XAMPP MySQL is running
+5. Run: node scripts/create-admin.js
+6. Run: node scripts/create-students.js  
+7. Start server: npm start
+8. Access: http://localhost:3000
+
+Login:
+- Admin: admin / admin123
+- Student: 23CS001 / 23CS001
